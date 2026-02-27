@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Horarios Académicos v2</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f1f5f9;
+            --grid-line: #e2e8f0;
+            --hour-height: 60px; /* 1 hora = 60px para que 1 min = 1px */
+        }
+
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+
+        .layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; max-width: 1400px; margin: auto; }
+
+        /* Panel Control */
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .input-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+        input, select, button { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; outline: none; }
+        button { background: var(--primary); color: white; border: none; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #1d4ed8; }
+
+        /* Grilla */
+        .schedule-container { background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--grid-line); display: flex; flex-direction: column; position: relative; min-width: 700px; }
+
+        .days-header { display: grid; grid-template-columns: 60px repeat(6, 1fr); background: #f8fafc; border-bottom: 2px solid var(--grid-line); }
+        .day-label { padding: 15px; text-align: center; font-weight: bold; border-right: 1px solid var(--grid-line); }
+
+        .grid-body { display: grid; grid-template-columns: 60px repeat(6, 1fr); position: relative; height: calc(14 * var(--hour-height)); }
+
+        /* Líneas de las horas */
+        .time-labels { display: flex; flex-direction: column; }
+        .time-label { height: var(--hour-height); display: flex; align-items: flex-start; justify-content: center; font-size: 0.75rem; color: #64748b; border-bottom: 1px solid var(--grid-line); border-right: 1px solid var(--grid-line); box-sizing: border-box; }
+
+        .day-column { position: relative; border-right: 1px solid var(--grid-line); background-image: linear-gradient(var(--grid-line) 1px, transparent 1px); background-size: 100% var(--hour-height); }
+
+        /* Bloques de materias */
+        .subject-block {
+            position: absolute;
+            left: 4px; right: 4px;
+            background: rgba(37, 99, 235, 0.15);
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            padding: 5px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            overflow: hidden;
+            z-index: 10;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .subject-item { display: flex; justify-content: space-between; padding: 8px; background: #f8fafc; margin-bottom: 5px; border-radius: 4px; font-size: 0.85rem; border-left: 4px solid var(--primary); }
+        .btn-del { color: #ef4444; cursor: pointer; font-weight: bold; border: none; background: none; padding: 0 5px; }
+    </style>
+</head>
+<body>
+
+<div class="layout">
+    <div class="card">
+        <h2 style="margin-top:0">Simulador</h2>
+        <div class="input-group">
+            <label>Materia</label>
+            <input type="text" id="subjectName" placeholder="Ej: Penal I">
+        </div>
+        <div class="input-group">
+            <label>Día</label>
+            <select id="daySelect">
+                <option value="0">Lunes</option>
+                <option value="1">Martes</option>
+                <option value="2">Miércoles</option>
+                <option value="3">Jueves</option>
+                <option value="4">Viernes</option>
+                <option value="5">Sábado</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <div class="input-group">
+                <label>Inicio</label>
+                <input type="time" id="startTime" value="09:00">
+            </div>
+            <div class="input-group">
+                <label>Fin</label>
+                <input type="time" id="endTime" value="11:00">
+            </div>
+        </div>
+        <button onclick="addSubject()">Agregar Materia</button>
+        <div id="error-msg" style="color: #ef4444; font-size: 0.8rem; margin-top: 10px; display: none;"></div>
+
+        <h3 style="margin-top: 25px;">Lista de Materias</h3>
+        <div id="subjectsList"></div>
+    </div>
+
+    <div class="schedule-container">
+        <div class="days-header">
+            <div class="day-label"></div>
+            <div class="day-label">Lun</div>
+            <div class="day-label">Mar</div>
+            <div class="day-label">Mié</div>
+            <div class="day-label">Jue</div>
+            <div class="day-label">Vie</div>
+            <div class="day-label">Sáb</div>
+        </div>
+        <div class="grid-body">
+            <div class="time-labels" id="timeLabels"></div>
+            <div class="day-column" id="col-0"></div>
+            <div class="day-column" id="col-1"></div>
+            <div class="day-column" id="col-2"></div>
+            <div class="day-column" id="col-3"></div>
+            <div class="day-column" id="col-4"></div>
+            <div class="day-column" id="col-5"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const START_HOUR = 8;
+    const END_HOUR = 22;
+    let subjects = [];
+
+    // Generar etiquetas de hora
+    const timeLabelsContainer = document.getElementById('timeLabels');
+    for (let h = START_HOUR; h < END_HOUR; h++) {
+        const div = document.createElement('div');
+        div.className = 'time-label';
+        div.innerText = `${h}:00`;
+        timeLabelsContainer.appendChild(div);
+    }
+
+    function timeToMinutes(timeStr) {
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function addSubject() {
+        const name = document.getElementById('subjectName').value;
+        const day = parseInt(document.getElementById('daySelect').value);
+        const startStr = document.getElementById('startTime').value;
+        const endStr = document.getElementById('endTime').value;
+        const errorDiv = document.getElementById('error-msg');
+
+        if (!name) return alert("Escribe el nombre");
+
+        const startMin = timeToMinutes(startStr);
+        const endMin = timeToMinutes(endStr);
+        const limitStart = START_HOUR * 60;
+        const limitEnd = END_HOUR * 60;
+
+        // Validaciones
+        if (endMin <= startMin) {
+            showError("La hora de fin debe ser posterior al inicio.");
+            return;
+        }
+        if (startMin < limitStart || endMin > limitEnd) {
+            showError("Horario fuera de rango (8:00 a 22:00).");
+            return;
+        }
+
+        // Colisiones
+        const collision = subjects.some(s => {
+            return s.day === day && (
+                (startMin >= s.start && startMin < s.end) ||
+                (endMin > s.start && endMin <= s.end) ||
+                (startMin <= s.start && endMin >= s.end)
+            );
+        });
+
+        if (collision) {
+            showError("¡Choque de horarios! Revisa otra opción.");
+            return;
+        }
+
+        errorDiv.style.display = 'none';
+        const newSub = { id: Date.now(), name, day, start: startMin, end: endMin, startStr, endStr };
+        subjects.push(newSub);
+        render();
+    }
+
+    function showError(txt) {
+        const errorDiv = document.getElementById('error-msg');
+        errorDiv.innerText = "⚠️ " + txt;
+        errorDiv.style.display = 'block';
+    }
+
+    function removeSubject(id) {
+        subjects = subjects.filter(s => s.id !== id);
+        render();
+    }
+
+    function render() {
+        // Limpiar columnas y lista
+        document.querySelectorAll('.day-column').forEach(c => c.innerHTML = '');
+        const listContainer = document.getElementById('subjectsList');
+        listContainer.innerHTML = '';
+
+        subjects.forEach(s => {
+            // Calcular posición
+            // Cada hora son 60px, por ende 1 minuto es 1px.
+            const top = (s.start - (START_HOUR * 60));
+            const height = (s.end - s.start);
+
+            const block = document.createElement('div');
+            block.className = 'subject-block';
+            block.style.top = `${top}px`;
+            block.style.height = `${height}px`;
+            block.innerHTML = `<strong>${s.name}</strong><br>${s.startStr} - ${s.endStr}`;
+
+            document.getElementById(`col-${s.day}`).appendChild(block);
+
+            // Lista lateral
+            const item = document.createElement('div');
+            item.className = 'subject-item';
+            item.innerHTML = `
+                <div><b>${s.name}</b><br><small>Día ${s.day+1} | ${s.startStr}</small></div>
+                <button class="btn-del" onclick="removeSubject(${s.id})">✕</button>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+</script>
+</body>
+</html>
