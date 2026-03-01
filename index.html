@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Planner Semanal Pink Edition (Auto-Save)</title>
+    <title>Planificador Semanal</title>
     <style>
         :root {
             --primary-pink: #FFDBFD;
@@ -266,7 +266,7 @@
         if (endMin <= startMin) { showError("Revisa la hora de fin."); return; }
 
         const collision = subjects.some(s => s.day === day && ((startMin >= s.start && startMin < s.end) || (endMin > s.start && endMin <= s.end) || (startMin <= s.start && endMin >= s.end)));
-        if (collision) { showError("¡Hay un choque!"); return; }
+        if (collision) { showError("¡Horario Ocupado!"); return; }
 
         document.getElementById('error-msg').style.display = 'none';
         subjects.push({ id: Date.now(), name, day, start: startMin, end: endMin, startStr, endStr });
@@ -280,7 +280,7 @@
     }
 
     function clearAll() {
-        if(confirm("¿Seguro quieres borrar todo el horario?")) {
+        if(confirm("¿Seguro queres borrar todo el horario?")) {
             subjects = [];
             saveAndRender();
         }
@@ -321,3 +321,4 @@
 </script>
 </body>
 </html>
+
