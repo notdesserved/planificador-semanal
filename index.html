@@ -1,382 +1,323 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Planificador Semanal</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planner Semanal Pink Edition (Auto-Save)</title>
     <style>
-      :root {
-        --primary-pink: #ffdbfd;
-        --dark-pink: #f8b4f4;
-        --text-dark: #4a3a4a;
-        --bg: #fff5ff;
-        --hour-height: 60px;
-      }
+        :root {
+            --primary-pink: #FFDBFD;
+            --dark-pink: #f8b4f4;
+            --text-dark: #4a3a4a;
+            --bg: #fff5ff;
+            --hour-height: 60px;
+        }
 
-      body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: var(--bg);
-        margin: 0;
-        padding: 20px;
-        color: var(--text-dark);
-      }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg); 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text-dark); 
+        }
+        
+        .layout { display: grid; grid-template-columns: 320px 1fr; gap: 25px; max-width: 1400px; margin: auto; }
+        
+        /* Panel Control */
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 15px -3px rgba(255, 182, 193, 0.2);
+            border: 1px solid var(--primary-pink);
+        }
 
-      .layout {
-        display: grid;
-        grid-template-columns: 320px 1fr;
-        gap: 25px;
-        max-width: 1400px;
-        margin: auto;
-      }
+        h2, h3 { color: #d687d1; margin-top: 0; }
 
-      /* Panel Control */
-      .card {
-        background: white;
-        padding: 25px;
-        border-radius: 20px;
-        box-shadow: 0 10px 15px -3px rgba(255, 182, 193, 0.2);
-        border: 1px solid var(--primary-pink);
-      }
+        .input-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; }
+        
+        label { font-size: 0.9rem; font-weight: 600; color: #8a6b8a; }
 
-      h2,
-      h3 {
-        color: #d687d1;
-        margin-top: 0;
-      }
+        input, select { 
+            padding: 12px; 
+            border: 2px solid var(--primary-pink); 
+            border-radius: 10px; 
+            outline: none; 
+            background: #fff;
+            transition: border-color 0.3s;
+        }
 
-      .input-group {
-        margin-bottom: 15px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
+        input:focus { border-color: var(--dark-pink); }
 
-      label {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #8a6b8a;
-      }
+        button { 
+            background: var(--primary-pink); 
+            color: #7d4a7d; 
+            border: none; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            padding: 12px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 0px #eec2ec;
+        }
 
-      input,
-      select {
-        padding: 12px;
-        border: 2px solid var(--primary-pink);
-        border-radius: 10px;
-        outline: none;
-        background: #fff;
-        transition: border-color 0.3s;
-      }
+        button:hover { 
+            background: var(--dark-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0px #eec2ec;
+        }
 
-      input:focus {
-        border-color: var(--dark-pink);
-      }
+        /* Grilla */
+        .schedule-container { 
+            background: white; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            border: 2px solid var(--primary-pink); 
+            display: flex; 
+            flex-direction: column; 
+            position: relative; 
+            min-width: 750px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+        }
+        
+        .days-header { 
+            display: grid; 
+            grid-template-columns: 70px repeat(6, 1fr); 
+            background: var(--primary-pink); 
+            color: #7d4a7d;
+        }
 
-      button {
-        background: var(--primary-pink);
-        color: #7d4a7d;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
-        margin-top: 10px;
-        padding: 12px;
-        border-radius: 10px;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 0px #eec2ec;
-      }
+        .day-label { padding: 15px; text-align: center; font-weight: bold; border-right: 1px solid rgba(255,255,255,0.5); }
 
-      button:hover {
-        background: var(--dark-pink);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 0px #eec2ec;
-      }
+        .grid-body { 
+            display: grid; 
+            grid-template-columns: 70px repeat(6, 1fr); 
+            position: relative; 
+            height: calc(14 * var(--hour-height)); 
+        }
 
-      button:active {
-        transform: translateY(0px);
-        box-shadow: 0 2px 0px #eec2ec;
-      }
+        .time-labels { display: flex; flex-direction: column; background: #fffafb; }
+        .time-label { 
+            height: var(--hour-height); 
+            display: flex; 
+            align-items: flex-start; 
+            justify-content: center; 
+            font-size: 0.8rem; 
+            color: #a88ba8; 
+            border-bottom: 1px solid #fff0f5; 
+            border-right: 2px solid var(--primary-pink);
+            box-sizing: border-box;
+            padding-top: 5px;
+        }
 
-      /* Grilla */
-      .schedule-container {
-        background: white;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 2px solid var(--primary-pink);
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        min-width: 750px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-      }
+        .day-column { 
+            position: relative; 
+            border-right: 1px solid #fff0f5; 
+            background-image: linear-gradient(#fff0f5 1px, transparent 1px); 
+            background-size: 100% var(--hour-height); 
+        }
 
-      .days-header {
-        display: grid;
-        grid-template-columns: 70px repeat(6, 1fr);
-        background: var(--primary-pink);
-        color: #7d4a7d;
-      }
+        /* Bloques Rositas */
+        .subject-block {
+            position: absolute;
+            left: 5px; right: 5px;
+            background: var(--primary-pink);
+            border: 2px solid var(--dark-pink);
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 0.85rem;
+            color: #7d4a7d;
+            overflow: hidden;
+            z-index: 10;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(214, 135, 209, 0.2);
+        }
 
-      .day-label {
-        padding: 15px;
-        text-align: center;
-        font-weight: bold;
-        border-right: 1px solid rgba(255, 255, 255, 0.5);
-      }
+        .subject-item { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 12px; 
+            background: #fffaff; 
+            margin-bottom: 10px; 
+            border-radius: 8px; 
+            font-size: 0.9rem; 
+            border: 1px solid var(--primary-pink);
+            border-left: 6px solid var(--dark-pink);
+        }
 
-      .grid-body {
-        display: grid;
-        grid-template-columns: 70px repeat(6, 1fr);
-        position: relative;
-        height: calc(14 * var(--hour-height));
-      }
+        .btn-del { color: #ff85a1; cursor: pointer; font-weight: bold; border: none; background: none; font-size: 1.2rem; }
+        .btn-del:hover { color: #ff4d6d; }
 
-      .time-labels {
-        display: flex;
-        flex-direction: column;
-        background: #fffafb;
-      }
-      .time-label {
-        height: var(--hour-height);
-        display: flex;
-        align-items: flex-start;
-        justify-content: center;
-        font-size: 0.8rem;
-        color: #a88ba8;
-        border-bottom: 1px solid #fff0f5;
-        border-right: 2px solid var(--primary-pink);
-        box-sizing: border-box;
-        padding-top: 5px;
-      }
-
-      .day-column {
-        position: relative;
-        border-right: 1px solid #fff0f5;
-        background-image: linear-gradient(#fff0f5 1px, transparent 1px);
-        background-size: 100% var(--hour-height);
-      }
-
-      /* Bloques de materias Rositas */
-      .subject-block {
-        position: absolute;
-        left: 5px;
-        right: 5px;
-        background: var(--primary-pink);
-        border: 2px solid var(--dark-pink);
-        border-radius: 8px;
-        padding: 8px;
-        font-size: 0.85rem;
-        color: #7d4a7d;
-        overflow: hidden;
-        z-index: 10;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        text-align: center;
-        box-shadow: 0 2px 5px rgba(214, 135, 209, 0.2);
-      }
-
-      .subject-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 12px;
-        background: #fffaff;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        border: 1px solid var(--primary-pink);
-        border-left: 6px solid var(--dark-pink);
-      }
-
-      .btn-del {
-        color: #ff85a1;
-        cursor: pointer;
-        font-weight: bold;
-        border: none;
-        background: none;
-        font-size: 1.2rem;
-      }
-      .btn-del:hover {
-        color: #ff4d6d;
-      }
-
-      #error-msg {
-        background: #fff0f0;
-        color: #ff4d6d;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ffd1d1;
-        margin-top: 10px;
-        display: none;
-        font-size: 0.85rem;
-      }
+        #error-msg {
+            background: #fff0f0;
+            color: #ff4d6d;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ffd1d1;
+            margin-top: 10px;
+            display: none;
+            font-size: 0.85rem;
+        }
     </style>
-  </head>
-  <body>
-    <div class="layout">
-      <div class="card">
+</head>
+<body>
+
+<div class="layout">
+    <div class="card">
         <h2>✨ Mi Horario</h2>
         <div class="input-group">
-          <label>Nombre de la Materia</label>
-          <input type="text" id="subjectName" placeholder="Ej: Derecho Penal" />
+            <label>Nombre de la Materia</label>
+            <input type="text" id="subjectName" placeholder="Ej: Derecho Penal">
         </div>
         <div class="input-group">
-          <label>Día de la semana</label>
-          <select id="daySelect">
-            <option value="0">Lunes</option>
-            <option value="1">Martes</option>
-            <option value="2">Miércoles</option>
-            <option value="3">Jueves</option>
-            <option value="4">Viernes</option>
-            <option value="5">Sábado</option>
-          </select>
+            <label>Día de la semana</label>
+            <select id="daySelect">
+                <option value="0">Lunes</option>
+                <option value="1">Martes</option>
+                <option value="2">Miércoles</option>
+                <option value="3">Jueves</option>
+                <option value="4">Viernes</option>
+                <option value="5">Sábado</option>
+            </select>
         </div>
-        <div style="display: flex; gap: 10px">
-          <div class="input-group" style="flex: 1">
-            <label>Inicio</label>
-            <input type="time" id="startTime" value="09:00" />
-          </div>
-          <div class="input-group" style="flex: 1">
-            <label>Fin</label>
-            <input type="time" id="endTime" value="11:00" />
-          </div>
+        <div style="display: flex; gap: 10px;">
+            <div class="input-group" style="flex:1">
+                <label>Inicio</label>
+                <input type="time" id="startTime" value="09:00">
+            </div>
+            <div class="input-group" style="flex:1">
+                <label>Fin</label>
+                <input type="time" id="endTime" value="11:00">
+            </div>
         </div>
         <button onclick="addSubject()">Añadir Materia ✨</button>
         <div id="error-msg"></div>
 
-        <h3 style="margin-top: 30px; font-size: 1.1rem">Materias anotadas</h3>
+        <h3 style="margin-top: 30px; font-size: 1.1rem;">Materias anotadas</h3>
         <div id="subjectsList"></div>
-      </div>
-
-      <div class="schedule-container">
-        <div class="days-header">
-          <div class="day-label">Hora</div>
-          <div class="day-label">Lunes</div>
-          <div class="day-label">Martes</div>
-          <div class="day-label">Mié</div>
-          <div class="day-label">Juev</div>
-          <div class="day-label">Vier</div>
-          <div class="day-label">Sáb</div>
-        </div>
-        <div class="grid-body">
-          <div class="time-labels" id="timeLabels"></div>
-          <div class="day-column" id="col-0"></div>
-          <div class="day-column" id="col-1"></div>
-          <div class="day-column" id="col-2"></div>
-          <div class="day-column" id="col-3"></div>
-          <div class="day-column" id="col-4"></div>
-          <div class="day-column" id="col-5"></div>
-        </div>
-      </div>
+        <button onclick="clearAll()" style="background: #fff; border: 1px solid #ff85a1; color: #ff85a1; font-size: 0.8rem; padding: 5px; width: 100%; margin-top: 10px;">Limpiar todo</button>
     </div>
 
-    <script>
-      const START_HOUR = 8;
-      const END_HOUR = 22;
-      let subjects = [];
+    <div class="schedule-container">
+        <div class="days-header">
+            <div class="day-label">Hora</div>
+            <div class="day-label">Lun</div>
+            <div class="day-label">Mar</div>
+            <div class="day-label">Mié</div>
+            <div class="day-label">Jue</div>
+            <div class="day-label">Vie</div>
+            <div class="day-label">Sáb</div>
+        </div>
+        <div class="grid-body">
+            <div class="time-labels" id="timeLabels"></div>
+            <div class="day-column" id="col-0"></div>
+            <div class="day-column" id="col-1"></div>
+            <div class="day-column" id="col-2"></div>
+            <div class="day-column" id="col-3"></div>
+            <div class="day-column" id="col-4"></div>
+            <div class="day-column" id="col-5"></div>
+        </div>
+    </div>
+</div>
 
-      const timeLabelsContainer = document.getElementById('timeLabels');
-      for (let h = START_HOUR; h < END_HOUR; h++) {
+<script>
+    const START_HOUR = 8;
+    const END_HOUR = 22;
+    let subjects = [];
+
+    // CARGAR DATOS AL INICIAR
+    window.onload = () => {
+        const saved = localStorage.getItem('mySchedule');
+        if (saved) {
+            subjects = JSON.parse(saved);
+            render();
+        }
+    };
+
+    // Generar etiquetas de hora
+    const timeLabelsContainer = document.getElementById('timeLabels');
+    for (let h = START_HOUR; h < END_HOUR; h++) {
         const div = document.createElement('div');
         div.className = 'time-label';
         div.innerText = `${h}:00`;
         timeLabelsContainer.appendChild(div);
-      }
+    }
 
-      function timeToMinutes(timeStr) {
+    function timeToMinutes(timeStr) {
         const [h, m] = timeStr.split(':').map(Number);
         return h * 60 + m;
-      }
+    }
 
-      function addSubject() {
+    function addSubject() {
         const name = document.getElementById('subjectName').value;
         const day = parseInt(document.getElementById('daySelect').value);
         const startStr = document.getElementById('startTime').value;
         const endStr = document.getElementById('endTime').value;
-        const errorDiv = document.getElementById('error-msg');
 
-        if (!name) {
-          showError('Escribe el nombre de la materia.');
-          return;
-        }
-
+        if (!name) { showError("Escribe el nombre."); return; }
         const startMin = timeToMinutes(startStr);
         const endMin = timeToMinutes(endStr);
-        const limitStart = START_HOUR * 60;
-        const limitEnd = END_HOUR * 60;
 
-        if (endMin <= startMin) {
-          showError('La hora de fin debe ser posterior.');
-          return;
-        }
-        if (startMin < limitStart || endMin > limitEnd) {
-          showError('Fuera del rango (8am - 10pm).');
-          return;
-        }
+        if (endMin <= startMin) { showError("Revisa la hora de fin."); return; }
 
-        const collision = subjects.some((s) => {
-          return (
-            s.day === day &&
-            ((startMin >= s.start && startMin < s.end) ||
-              (endMin > s.start && endMin <= s.end) ||
-              (startMin <= s.start && endMin >= s.end))
-          );
-        });
+        const collision = subjects.some(s => s.day === day && ((startMin >= s.start && startMin < s.end) || (endMin > s.start && endMin <= s.end) || (startMin <= s.start && endMin >= s.end)));
+        if (collision) { showError("¡Hay un choque!"); return; }
 
-        if (collision) {
-          showError('Ese horario ya está ocupado.');
-          return;
-        }
-
-        errorDiv.style.display = 'none';
-        subjects.push({
-          id: Date.now(),
-          name,
-          day,
-          start: startMin,
-          end: endMin,
-          startStr,
-          endStr,
-        });
-        render();
+        document.getElementById('error-msg').style.display = 'none';
+        subjects.push({ id: Date.now(), name, day, start: startMin, end: endMin, startStr, endStr });
+        saveAndRender();
         document.getElementById('subjectName').value = '';
-      }
+    }
 
-      function showError(txt) {
-        const errorDiv = document.getElementById('error-msg');
-        errorDiv.innerText = '❌ ' + txt;
-        errorDiv.style.display = 'block';
-      }
+    function removeSubject(id) {
+        subjects = subjects.filter(s => s.id !== id);
+        saveAndRender();
+    }
 
-      function removeSubject(id) {
-        subjects = subjects.filter((s) => s.id !== id);
+    function clearAll() {
+        if(confirm("¿Seguro quieres borrar todo el horario?")) {
+            subjects = [];
+            saveAndRender();
+        }
+    }
+
+    function saveAndRender() {
+        localStorage.setItem('mySchedule', JSON.stringify(subjects));
         render();
-      }
+    }
 
-      function render() {
-        document.querySelectorAll('.day-column').forEach((c) => (c.innerHTML = ''));
+    function showError(txt) {
+        const e = document.getElementById('error-msg');
+        e.innerText = "❌ " + txt; e.style.display = 'block';
+    }
+
+    function render() {
+        document.querySelectorAll('.day-column').forEach(c => c.innerHTML = '');
         const listContainer = document.getElementById('subjectsList');
         listContainer.innerHTML = '';
 
-        subjects.forEach((s) => {
-          const top = s.start - START_HOUR * 60;
-          const height = s.end - s.start;
+        subjects.forEach(s => {
+            const top = (s.start - (START_HOUR * 60));
+            const height = (s.end - s.start);
 
-          const block = document.createElement('div');
-          block.className = 'subject-block';
-          block.style.top = `${top}px`;
-          block.style.height = `${height}px`;
-          block.innerHTML = `<strong>${s.name}</strong><br><small>${s.startStr} - ${s.endStr}</small>`;
-          document.getElementById(`col-${s.day}`).appendChild(block);
+            const block = document.createElement('div');
+            block.className = 'subject-block';
+            block.style.top = `${top}px`;
+            block.style.height = `${height}px`;
+            block.innerHTML = `<strong>${s.name}</strong><br><small>${s.startStr}</small>`;
+            document.getElementById(`col-${s.day}`).appendChild(block);
 
-          const item = document.createElement('div');
-          item.className = 'subject-item';
-          item.innerHTML = `
-                <div><b>${s.name}</b><br><small>${s.startStr} - ${s.endStr}</small></div>
-                <button class="btn-del" onclick="removeSubject(${s.id})">×</button>
-            `;
-          listContainer.appendChild(item);
+            const item = document.createElement('div');
+            item.className = 'subject-item';
+            item.innerHTML = `<div><b>${s.name}</b><br><small>${s.startStr} - ${s.endStr}</small></div><button class="btn-del" onclick="removeSubject(${s.id})">×</button>`;
+            listContainer.appendChild(item);
         });
-      }
-    </script>
-  </body>
+    }
+</script>
+</body>
 </html>
